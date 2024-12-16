@@ -23,37 +23,61 @@ void loop() {
 
 void data_V(const uint8_t* buffer, size_t len, bool chkOk) {
   dumpLine(buffer, len, chkOk);
-  if (len == 20) {
-    // Membuat satu string untuk menampung semua data
+  if (len == 20) {  // Panjang data yang valid adalah 20 byte
     String dataString = "";
-    
+
+    // Membuat array untuk menyimpan setiap part data
+    String parts[6];
+
     // Menambahkan Front-Left suspension pressure
-    dataString += getPressureValue(buffer, 3);
-    dataString += "-";  // Tambahkan tanda pemisah
-    
+    parts[0] = getPressureValue(buffer, 3);
+    dataString += parts[0];
+    dataString += "-";
+
     // Menambahkan Front-Right suspension pressure
-    dataString += getPressureValue(buffer, 5);
-    dataString += "-";  // Tambahkan tanda pemisah
-    
+    parts[1] = getPressureValue(buffer, 5);
+    dataString += parts[1];
+    dataString += "-";
+
     // Menambahkan Rear-Left suspension pressure
-    dataString += getPressureValue(buffer, 7);
-    dataString += "-";  // Tambahkan tanda pemisah
-    
+    parts[2] = getPressureValue(buffer, 7);
+    dataString += parts[2];
+    dataString += "-";
+
     // Menambahkan Rear-Right suspension pressure
-    dataString += getPressureValue(buffer, 9);
-    dataString += "-";  // Tambahkan tanda pemisah
-    
+    parts[3] = getPressureValue(buffer, 9);
+    dataString += parts[3];
+    dataString += "-";
+
     // Menambahkan Payload
-    dataString += getPayloadValue(buffer, 13);
-    dataString += "-";  // Tambahkan tanda pemisah
+    parts[4] = getPayloadValue(buffer, 13);
+    dataString += parts[4];
+    dataString += "-";
 
-    // Menambahkan Identitas Atau Nama Unit(Dumptruck)
-    dataString += F("HD78101KM");
+    // Menambahkan Identitas Unit (Dumptruck)
+    parts[5] = F("HD78101KM");
+    dataString += parts[5];
 
-    // Cetak semua data dalam satu string
-    Serial.println(dataString);
+    // Validasi apakah semua 6 bagian data ada
+    bool valid = true;
+    for (int i = 0; i < 5; i++) {  // Cek bagian 0 sampai 4 (sensor)
+      if (parts[i].toFloat() <= 0) {  // Jika ada nilai 0 atau kurang, dianggap tidak valid
+        valid = false;
+        break;
+      }
+    }
+
+    if (valid) {
+      Serial.println(F("Data valid, mengirim ke ESP32:"));
+      Serial.println(dataString);  // Kirim ke Serial Monitor
+      Serial2.println(dataString);  // Kirim ke ESP32
+    } else {
+      Serial.println(F("Data tidak valid, tidak dikirim:"));
+      Serial.println(dataString);
+    }
   }
 }
+
 
 // Fungsi untuk mendapatkan nilai tekanan suspensi sebagai angka saja
 String getPressureValue(const uint8_t* buffer, size_t pos) {
